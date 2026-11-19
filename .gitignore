@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Pointing probe: screenshots and generated images (labels.yaml stays tracked)
+probe/screens/
+probe/results/
+probe/review/
+probe/labels.yaml
+
+# Written by the harness at run time: state, kept screenshots, logs, escalations
+output/
+
+# Personal editor settings
+.vscode/
+
+# The API key lives in an environment variable; never commit a file holding one
+.env

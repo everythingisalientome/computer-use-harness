@@ -1,0 +1,58 @@
+# Tool declarations. A tool is code the harness runs. The model never calls a
+# tool directly: a procedure step names the tool, and the harness runs it.
+schema_version: 1
+
+tools:
+  - id: work_queue_csv
+    description: Reads requests from a CSV file and records their status in it.
+    config:
+      path: input/quotation-requests.csv
+      key_column: reference
+      status_column: status
+    operations:
+      - name: next_item
+        description: Returns the first row whose status is empty, or nothing.
+        args: {}
+        returns: One row as named values, or nothing found.
+        changes_data: false
+      - name: mark
+        description: Writes a status, a note and the time onto one row.
+        args:
+          reference: {type: text, required: true}
+          status: {type: text, required: true, allowed: [claimed, in_progress, completed, needs_human]}
+          note: {type: text, required: false}
+        returns: Success or failure.
+        changes_data: true
+
+  - id: launch_app
+    description: >
+      Opens an application as described in its app context: a browser at an
+      address for a web app, an executable for a desktop app. If the harness
+      already opened the app, it brings that window to the front instead of
+      opening another. It remembers the window, so the allowed-app check can
+      recognise it. It never asks for administrator rights.
+    operations:
+      - name: launch_app
+        args:
+          app: {type: text, required: true}
+        returns: Success or failure.
+        changes_data: false
+
+  - id: escalate
+    description: >
+      Sends a work item to a human. The harness always marks the item
+      "needs_human" in the state first; this tool then delivers it to the
+      destination the persona names.
+    config:
+      # For the first build the destination is a file. Later it could be a
+      # mailbox or a ticket queue without changing any procedure.
+      destinations:
+        review_file: output/needs-human.csv
+    operations:
+      - name: escalate
+        args:
+          reference: {type: text, required: true}
+          reason: {type: text, required: true}
+          destination: {type: text, required: true}
+        returns: Success or failure.
+        changes_data: true

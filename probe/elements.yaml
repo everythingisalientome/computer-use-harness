@@ -1,0 +1,74 @@
+# The pointing probe: which screens to capture and which elements to find on them.
+#
+# Each screen becomes one screenshot, probe/screens/<id>.png, taken by capture.py.
+# "get_there" is for the person taking the screenshot. The model never sees it.
+# Each element's "name" is the only text the model gets about it. Names say what
+# the element is, not where it is, so the probe measures pointing, not reading hints.
+
+screens:
+  - id: home
+    get_there: Open the ERPNext demo in Chrome, maximised on the primary monitor. Stay on the Home page.
+    elements:
+      - {id: logo, name: the ERPNext logo}
+      - {id: search_box, name: "the search box labelled 'Search or type a command'"}
+      - {id: help, name: the Help menu}
+      - {id: user_badge, name: the user badge (avatar)}
+      - {id: selling_module, name: the Selling module in the module list}
+
+  - id: customer_list
+    get_there: Open the Customer list (Selling > Customer).
+    elements:
+      - {id: customer_name_filter, name: the Customer Name filter box}
+      - {id: customer_group_filter, name: the Customer Group filter box}
+      - {id: add_customer, name: the Add Customer button}
+      - {id: first_row_name, name: the customer name in the first row of the list}
+      - {id: first_row_status, name: the status label in the first row of the list}
+      - {id: first_row_checkbox, name: the checkbox at the start of the first row of the list}
+
+  - id: new_customer
+    get_there: Click Add Customer so the New Customer form is showing, empty.
+    elements:
+      - {id: customer_name_field, name: the Customer Name input field}
+      - {id: customer_type_field, name: the Customer Type field}
+      - {id: customer_group_field, name: the Customer Group field}
+      - {id: territory_field, name: the Territory field}
+      - {id: save_button, name: the Save button}
+
+  - id: item_list
+    get_there: Open the Item list (Stock > Item). Make sure at least one row shows a "Template" status.
+    elements:
+      - {id: id_filter, name: the ID filter box}
+      - {id: item_name_filter, name: the Item Name filter box}
+      - {id: item_group_filter, name: the Item Group filter box}
+      - {id: add_item, name: the Add Item button}
+      - {id: template_label, name: "a status label that reads 'Template'"}
+
+  - id: new_quotation
+    get_there: Open a New Quotation. Leave it empty apart from the one blank Items row it starts with.
+    elements:
+      - {id: customer_field, name: the Customer input field}
+      - {id: item_code_cell, name: the Item Code cell in the first row of the Items table}
+      - {id: quantity_cell, name: the Quantity cell in the first row of the Items table}
+      - {id: add_row, name: the Add Row button under the Items table}
+      - {id: total_field, name: the Total (INR) field}
+      - {id: not_saved_label, name: "the 'Not Saved' label"}
+      - {id: row_edit_icon, name: the edit (pencil) icon at the end of the first row of the Items table}
+
+  - id: quotation_suggestions
+    get_there: On a New Quotation, click the Customer field and type one or two letters so its suggestion list opens.
+    elements:
+      - {id: first_suggestion, name: the first suggestion in the Customer field's suggestion list}
+      - {id: second_suggestion, name: the second suggestion in the Customer field's suggestion list}
+
+  - id: notepad
+    get_there: Open Notepad, maximised on the primary monitor.
+    elements:
+      - {id: text_area, name: the text editing area}
+      - {id: file_menu, name: the File menu}
+
+  - id: notepad_save_as
+    get_there: In Notepad, open the Save As dialog.
+    elements:
+      - {id: file_name_box, name: the File name box}
+      - {id: save_as_save_button, name: the Save button}
+      - {id: save_as_cancel_button, name: the Cancel button}

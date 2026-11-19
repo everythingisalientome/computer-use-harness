@@ -1,0 +1,220 @@
+# Procedure: the known steps for one work type, including how work is found.
+# The harness runs the steps in order and tracks which one it is on.
+schema_version: 1
+
+id: create-sales-quotation
+version: "2026-11-18.1"
+persona: quotation-creator
+description: >
+  Create a draft sales quotation in ERPNext for one request, then record the
+  result in a Notepad file.
+
+# The values a work item carries. "key" is the field that identifies the item
+# in the shared state.
+work_item:
+  key: reference
+  fields:
+    reference: {type: text}
+    customer_name: {type: text}
+    customer_type: {type: text}
+    customer_group: {type: text}
+    territory: {type: text}
+    item_code: {type: text}
+    quantity: {type: number}
+    note_file: {type: text}
+
+steps:
+  # ---- Finding and claiming work -------------------------------------------
+  - id: find-request
+    role: pickup
+    intent: Get the next request that nobody has started.
+    via: tool
+    tool: work_queue_csv.next_item
+    when_nothing_found: no_work
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+
+  - id: claim-request
+    role: claim
+    intent: Mark the request as claimed so it is not picked up again.
+    via: tool
+    tool: work_queue_csv.mark
+    args: {reference: "{reference}", status: claimed}
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+
+  # ---- Doing the work ------------------------------------------------------
+  - id: open-erpnext
+    role: work
+    intent: Open ERPNext and show its home screen.
+    app: erpnext
+    via: tool
+    tool: launch_app.launch_app
+    args: {app: erpnext}
+    verify_with: screen
+    done_when: The ERPNext Home page is showing, with the module list on the left.
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+
+  - id: check-customer
+    role: work
+    intent: Show the Customer list filtered to the customer name {customer_name}.
+    app: erpnext
+    via: screen
+    inputs: [customer_name]
+    done_when: The Customer list is showing and its Customer Name filter contains {customer_name}.
+    captures:
+      - name: customer_exists
+        type: text
+        allowed_values: ["yes", "no"]
+        question: Does the list show a customer whose name is exactly {customer_name}?
+        double_read: true
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+
+  - id: create-customer
+    role: work
+    intent: >
+      Create a new customer with Customer Name {customer_name}, Customer Type
+      {customer_type}, Customer Group {customer_group} and Territory
+      {territory}, then save it.
+    app: erpnext
+    via: screen
+    inputs: [customer_name, customer_type, customer_group, territory]
+    skip_if: {value: customer_exists, compare: equals, to: "yes"}
+    done_when: >
+      A customer form titled {customer_name} is open and it no longer shows
+      the "Not Saved" label.
+    irreversible: true
+    on_fail: {retries: 0, then: send_to_human}
+    hints:
+      - Use the "Add Customer" button at the top right of the Customer list.
+
+  - id: check-item
+    role: work
+    intent: Show the Item list filtered so the row for item code {item_code} is visible.
+    app: erpnext
+    via: screen
+    inputs: [item_code]
+    done_when: The Item list is showing a row whose Item Code is {item_code}.
+    captures:
+      - name: item_name
+        type: text
+        question: What is the Item Name on the row whose Item Code is {item_code}?
+        double_read: false
+      - name: item_status
+        type: text
+        question: What does the Status label say on the row whose Item Code is {item_code}?
+        double_read: true
+    rules: [item-must-not-be-template]
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+
+  - id: fill-quotation
+    role: work
+    intent: >
+      Start a new quotation. Set Customer to {customer_name}. In the first
+      row of the Items table set Item Code to {item_code} and Quantity to
+      {quantity}. Do not save.
+    app: erpnext
+    via: screen
+    inputs: [customer_name, item_code, quantity]
+    done_when: >
+      A new quotation showing the "Not Saved" label is open. Its Customer
+      field shows {customer_name}. The first Items row shows Item Code
+      {item_code} and Quantity {quantity}.
+    rules: [customer-on-quotation-matches]
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+    hints:
+      - Leave Company, Date, Series and Order Type as they are.
+
+  - id: read-total
+    role: work
+    intent: Bring the "Total (INR)" field below the Items table into view.
+    app: erpnext
+    via: screen
+    done_when: The "Total (INR)" field of the unsaved quotation is visible.
+    captures:
+      - name: quotation_total
+        type: number
+        question: What amount does the "Total (INR)" field show?
+        double_read: true
+    rules: [quotation-total-limit]
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+
+  - id: save-quotation
+    role: work
+    intent: Save the quotation as a draft. Do not submit it.
+    app: erpnext
+    via: screen
+    inputs: [customer_name, item_code, quantity, quotation_total]
+    done_when: >
+      The quotation no longer shows "Not Saved" and its status is Draft. It
+      shows Customer {customer_name}, Item Code {item_code}, Quantity
+      {quantity} and a total of {quotation_total}.
+    captures:
+      - name: quotation_id
+        type: text
+        question: What is the quotation's ID, shown in the form title?
+        double_read: false
+    # Saving creates a record. Repeating it would create a second quotation,
+    # so an unclear result goes to a human instead of being retried.
+    irreversible: true
+    on_fail: {retries: 0, then: send_to_human}
+
+  # ---- Recording the result in a desktop app -------------------------------
+  - id: open-notepad
+    role: work
+    intent: Open Notepad, or bring it to the front if it is already open.
+    app: notepad
+    via: tool
+    tool: launch_app.launch_app
+    args: {app: notepad}
+    verify_with: screen
+    done_when: A Notepad window is in front of every other window.
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+
+  - id: write-note
+    role: work
+    intent: >
+      Start a new, empty Notepad document. On one line type the request
+      reference {reference}, press Tab, then type the quotation ID
+      {quotation_id}.
+    app: notepad
+    via: screen
+    inputs: [reference, quotation_id]
+    done_when: >
+      The Notepad text area shows exactly one line, containing {reference}
+      followed by {quotation_id}, and nothing else.
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+    hints:
+      - Press Ctrl+N first so the document is empty.
+
+  - id: save-note
+    role: work
+    intent: Save the Notepad document as {note_file} using the Save As dialog.
+    app: notepad
+    via: screen
+    inputs: [note_file]
+    done_when: >
+      No Save As dialog is open, and the Notepad title shows the file name
+      at the end of {note_file}.
+    # Saving again only replaces the agent's own note, so a repeat is safe.
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}
+    hints:
+      - Type the whole path into the "File name" box, then press Enter.
+
+  # ---- Finishing -----------------------------------------------------------
+  - id: complete-request
+    role: complete
+    intent: Mark the request as completed and record the quotation ID.
+    via: tool
+    tool: work_queue_csv.mark
+    args: {reference: "{reference}", status: completed, note: "{quotation_id}"}
+    irreversible: false
+    on_fail: {retries: 1, then: send_to_human}

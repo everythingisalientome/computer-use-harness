@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "reference": "REQ-0001",
+  "work_type": "create-sales-quotation",
+  "status": "in_progress",
+  "status_reason": null,
+  "created_at": "2026-11-19T15:02:11Z",
+  "updated_at": "2026-11-19T15:04:40Z",
+  "created_by_persona": "quotation-creator",
+  "versions": {
+    "procedure": "2026-11-18.1",
+    "rules": "2026-11-18.1"
+  },
+  "data": {
+    "reference": "REQ-0001",
+    "customer_name": "Acme Robotics 1118",
+    "customer_type": "Company",
+    "customer_group": "Commercial",
+    "territory": "All Territories",
+    "item_code": "12345-BLA-128GB",
+    "quantity": 5,
+    "note_file": "C:\\Users\\Public\\Documents\\REQ-0001-quotation.txt"
+  },
+  "captures": {
+    "customer_exists": {"value": "no", "step": "check-customer", "reads": ["no", "no"]},
+    "item_name": {"value": "iPhone 13-BLA-128GB", "step": "check-item", "reads": ["iPhone 13-BLA-128GB"]},
+    "item_status": {"value": "Enabled", "step": "check-item", "reads": ["Enabled", "Enabled"]}
+  },
+  "steps": [
+    {"id": "find-request", "persona": "quotation-creator", "status": "verified", "started_at": "2026-11-19T15:02:11Z", "ended_at": "2026-11-19T15:02:11Z", "actions": 0, "rules": []},
+    {"id": "claim-request", "persona": "quotation-creator", "status": "verified", "started_at": "2026-11-19T15:02:11Z", "ended_at": "2026-11-19T15:02:12Z", "actions": 0, "rules": []},
+    {"id": "open-erpnext", "persona": "quotation-creator", "status": "verified", "started_at": "2026-11-19T15:02:12Z", "ended_at": "2026-11-19T15:02:24Z", "actions": 0, "rules": []},
+    {"id": "check-customer", "persona": "quotation-creator", "status": "verified", "started_at": "2026-11-19T15:02:24Z", "ended_at": "2026-11-19T15:02:58Z", "actions": 4, "rules": []},
+    {"id": "create-customer", "persona": "quotation-creator", "status": "verified", "started_at": "2026-11-19T15:02:58Z", "ended_at": "2026-11-19T15:03:49Z", "actions": 9, "rules": []},
+    {
+      "id": "check-item", "persona": "quotation-creator", "status": "verified",
+      "started_at": "2026-11-19T15:03:49Z", "ended_at": "2026-11-19T15:04:17Z", "actions": 3,
+      "rules": [
+        {"id": "item-must-not-be-template", "version": "2026-11-18.1", "kind": "computed", "input": "Enabled", "outcome": "continue"}
+      ]
+    },
+    {"id": "fill-quotation", "persona": "quotation-creator", "status": "attempting", "started_at": "2026-11-19T15:04:17Z", "ended_at": null, "actions": 6, "rules": []}
+  ],
+  "notes": [
+    {"written_by": "model", "persona": "quotation-creator", "step": "check-customer", "at": "2026-11-19T15:02:58Z", "text": "The list showed 'Acme Industries' but no 'Acme Robotics 1118'."}
+  ],
+  "evidence": {
+    "last_successful_step": "evidence/REQ-0001/check-item.png",
+    "failure_step": null
+  }
+}

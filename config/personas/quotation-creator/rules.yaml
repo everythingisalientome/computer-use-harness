@@ -1,0 +1,57 @@
+# Business rules. Owned and edited by the business.
+# Every change must raise "version". The version used is recorded against
+# each work item.
+schema_version: 1
+
+version: "2026-11-18.1"
+owner: Sales operations (example)
+
+rules:
+  # ---- Computed rules: evaluated by the harness, never by the model --------
+  # One value, one comparison, one outcome.
+  # compare: greater_than | less_than | equals | not_equals | in_list | is_empty
+  # outcome: continue | stop | send_to_human
+  - id: quotation-total-limit
+    kind: computed
+    description: Large quotations need a person to approve them.
+    value: quotation_total
+    compare: greater_than
+    to: 500000
+    outcome: send_to_human
+    reason: Quotation total is above 500,000 INR.
+
+  - id: item-must-not-be-template
+    kind: computed
+    description: Template items are not sellable products.
+    value: item_status
+    compare: equals
+    to: Template
+    outcome: send_to_human
+    reason: The requested item is a template, not a sellable product.
+
+  # ---- Judgment rules: answered by the model ------------------------------
+  # The model may always answer "not_sure", and "not_sure" always goes to a
+  # human. That outcome cannot be changed here.
+  - id: customer-on-quotation-matches
+    kind: judgment
+    description: The quotation must be for the requested customer.
+    question: >
+      Does the Customer field on the quotation refer to the same company as
+      "{customer_name}", allowing only for differences in letter case,
+      spacing and punctuation?
+    outcomes:
+      "yes": continue
+      "no": send_to_human
+
+  # ---- Rules that do not fit either shape ---------------------------------
+  # Write the rule in plain words. "handle_as" says what happens:
+  #   human    - the item always goes to a human at this point
+  #   judgment - the model answers it as a yes / no / not sure question
+  # Leave "handle_as" out to use the persona's default (unfit_rule_default).
+  #
+  # - id: unusual-customer-request
+  #   kind: freeform
+  #   text: >
+  #     If anything about the request looks unusual for this customer, have
+  #     the account manager look at it.
+  #   handle_as: human

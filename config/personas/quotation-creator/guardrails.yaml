@@ -1,0 +1,37 @@
+# Guardrails for this persona. Everything under "enforced" is checked by the
+# harness in code. Everything under "guidance" is only told to the model.
+schema_version: 1
+
+enforced:
+  # Before every screen action the foreground window must belong to one of
+  # these apps (see each app context for how the window is recognised).
+  allowed_apps: [erpnext, notepad]
+
+  limits:
+    max_actions_per_step: 15
+    max_wait_seconds_per_action: 5
+    max_recovery_actions_per_step: 3
+
+  # What the model may try when a screen does not belong. Never used on a
+  # step marked irreversible.
+  recovery_actions:
+    - {action: key, keys: escape}
+    - {action: click, target: a Close or Cancel button on a dialog}
+
+  # Before a step marked irreversible, every rule attached to an earlier
+  # step must have been evaluated with outcome "continue".
+  irreversible_gate: all_prior_rules_passed
+
+  # Keys the harness refuses to send, whatever the model asks for.
+  blocked_keys: ["alt+f4", "ctrl+w", "win+r", "win+l", "ctrl+alt+delete"]
+
+  # What happens when an enforced guardrail is broken.
+  on_breach: send_to_human
+
+guidance:
+  # Things the harness cannot detect from a click position. They are told to
+  # the model and, where possible, caught afterwards by a "done when" check.
+  never:
+    - Never press Submit on any document.
+    - Never delete a record.
+    - Never open ERPNext Settings.

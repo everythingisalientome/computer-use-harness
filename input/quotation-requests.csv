@@ -1,0 +1,4 @@
+reference,customer_name,customer_type,customer_group,territory,item_code,quantity,note_file,status,status_note,updated_at
+REQ-0001,Acme Robotics 1118,Company,Commercial,All Territories,12345-BLA-128GB,5,C:\Users\Public\Documents\REQ-0001-quotation.txt,,,
+REQ-0002,Borealis Drones 1118,Company,Commercial,All Territories,12345-BLA-128GB,500,C:\Users\Public\Documents\REQ-0002-quotation.txt,,,
+REQ-0003,Cobalt Sensors 1118,Company,Commercial,All Territories,12345,5,C:\Users\Public\Documents\REQ-0003-quotation.txt,,,

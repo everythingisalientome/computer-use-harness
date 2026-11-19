@@ -1,0 +1,29 @@
+# Model connection. This is the only file to change when switching to another
+# provider, a company gateway, or a localhost model. Any endpoint that speaks
+# the OpenAI chat-completions format will work.
+schema_version: 1
+
+provider: openrouter
+base_url: https://openrouter.ai/api/v1
+# The key is read from this environment variable. Never put a key in a file.
+api_key_env: OPENROUTER_API_KEY
+timeout_seconds: 60
+
+# Coordinates the models return are on a 0 to 1000 grid; the harness converts
+# them to screen pixels.
+coordinate_grid: 1000
+
+# Named model slots. Personas refer to a slot, not to a model name.
+# The model names below are NOT verified on OpenRouter. Check them first.
+models:
+  default:
+    model: google/gemini-3.8-flash
+    temperature: 0
+  alternate:
+    model: google/gemma-4-31b-it
+    temperature: 0
+
+# Example for a localhost model (vLLM or similar):
+#   provider: local
+#   base_url: http://localhost:8000/v1
+#   api_key_env: LOCAL_MODEL_KEY
