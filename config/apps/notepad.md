@@ -41,6 +41,7 @@ Each line is marked **seen** (observed on the build machine, Windows 11, on 2026
 - Ctrl+Shift+S opens the Save As dialog. (seen)
 - On a document never saved before, Ctrl+S opens the same dialog. (not checked)
 - The Save As dialog, titled "Save as", opens in front of Notepad, showing the Downloads folder. (seen)
+- The Save As dialog is a window of the Notepad process, notepad.exe. (seen)
 - It has a "File name" box near the bottom, filled in with "Untitled.txt" for a new document, and Save and Cancel buttons below it at the right. (seen)
 - Typing a full path, including the file name, into the "File name" box and pressing Enter saves the file to that location, whatever folder the dialog is showing. Because the dialog opens in Downloads, always type the full path. (not checked)
 - If a file with that name already exists, a small dialog asks whether to replace it. Choose Yes. (not checked)

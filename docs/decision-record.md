@@ -1,6 +1,6 @@
 # Computer use harness: decision record
 
-Last updated: 2026-11-19 (pointing probe results and model decisions, section 7)
+Last updated: 2026-11-19 (screen input and output, section 8)
 
 Status: **design complete. Template set version 1 and the build brief are written and reviewed.** No code starts until Preet explicitly asks for it. The harness itself will be built in Claude Code on Windows, not in the planning chat.
 
@@ -237,3 +237,33 @@ An earlier run scored six elements 0 of 3 for both models. They were labelling e
 
 - The probe gave the model the element's name. In the step loop the model must also decide which element to act on, so pointing in the step loop may be less accurate. Piece 3 is the first test of that.
 - All screenshots were at 100% display scaling. Piece 1 must still prove that positions are correct above 100%.
+
+## 8. Screen input and output (build piece 1), 2026-11-19
+
+### Decisions
+
+- **The harness runs DPI aware** ("per-monitor aware v2", set on its own process when the screen code loads). Screen size, cursor positions and screenshots are then all in real pixels, so display scaling never enters the grid-to-pixel conversion. Every screenshot is checked against the screen size, and a mismatch stops the harness.
+- **One grid-to-pixel conversion**, in `harness/screen/grid.py`: grid 0 is the first pixel and grid 1000 the last (`round(grid x (width - 1) / 1000)`). The pointing probe uses the same function. Re-scoring the piece 0 answers with it changed no hit.
+- **The harness acts on the primary monitor only.** The target machine will have one monitor; the demo machine may have more. Screenshots, clicks and the grid cover the primary monitor and nothing else. Two later pieces depend on this:
+  - **Piece 5:** the app launcher (`launch_app`) must place each app's window on the primary monitor and maximise it, both when it opens an app and when it brings an already open one to the front.
+  - **Piece 8:** the allowed-app check must refuse a foreground window that is not on the primary monitor, even when it belongs to an allowed app. The model would be pointing at a screenshot that does not show that window.
+- **Input through Windows' own calls (`SendInput`, via `ctypes`), not a library such as `pyautogui`.** Text is sent as characters rather than as keys on a keyboard layout, so any character arrives as written whatever the layout. No new dependency.
+- **Emergency stop: Ctrl+Alt+Q in any window.** It sets a flag checked before every input event, releases every held mouse button and modifier key, and ends the process at once with exit code 3. The mouse and keyboard refuse to act unless the hotkey registered, and the harness never sends the combination itself. No separate "stop if the mouse moved" check for now.
+- **Pauses** are constants in code, overridable per call and on the command line: 20 ms between typed characters, 100 ms after a click, scroll, drag, key combination or typed text, and 50 ms between moving the cursor and pressing. They are not template fields; making them one would need agreement first.
+- `double_click`, `scroll` (up, down, left, right) and `drag` are built now, because all three are in the action format.
+
+### Requirement on the environment
+
+- **The harness needs an unlocked, active desktop session.** In a locked, disconnected or minimised Remote Desktop session the harness sees the wrong screen or no screen, and its input does not reach the apps. Before every screenshot the harness asks Windows whether its session is active and unlocked, and whether the desktop receiving input is its own. A screenshot that Windows refuses, or that is one flat colour, also stops the harness. Each case stops it with a message saying which.
+- The first version checked only the desktop receiving input, and the test with Win+L showed that was not enough: the Windows 11 lock screen (`LockApp.exe`) is drawn on the user's own desktop until someone starts to sign in, so the lock screen picture was captured as a normal screenshot. The session lock state from Windows (`WTSQuerySessionInformation`) is now the main check. Retested with Win+L: the screenshot was refused with "This Windows session is locked". This matters for the parked session isolation work (section 5): an unattended agent needs a session that stays unlocked and connected.
+
+### Known limitation, nothing built
+
+- **Some legacy and remote-desktop apps may ignore direct character input.** Characters are sent as Unicode characters, not as key presses. Most apps accept them, but some older apps and some remote-desktop or virtualised clients only accept real key presses. The likely fallback is to put the value on the clipboard and paste it with Ctrl+V. That needs care because the clipboard is shared and would briefly hold work item data, so it must never be used for passwords. Nothing is built for this until an app needs it.
+
+### Evidence
+
+- `scripts\screen.py check` opens a harmless full-screen test window in its own process and checks clicks at the corners, middle and between, each click's position in a screenshot, double-click, right-click, scrolling, drag, typing (including é, ₹ and Indian digit grouping), key combinations, and the foreground window's title and process. Reports are saved to `output/screen-check/`.
+- At 100% scaling every check passed. The stop hotkey, pressed mid-check, ended the run with exit code 3 and left no key or button held.
+- At 125% and 150% scaling every check also passed, with identical pixel positions (reports `output/screen-check/2026-11-19_015520_scale125.txt` and `2026-11-19_015548_scale150.txt`). Positions are correct above 100%.
+- **Notepad's Save As dialog belongs to the Notepad process.** With the dialog in front, the foreground window was titled "Save as" and its process was `notepad.exe` (the Microsoft Store Notepad, version 11.2609). The allowed-app check by process therefore accepts it as part of Notepad, as `config/apps/notepad.md` assumes.

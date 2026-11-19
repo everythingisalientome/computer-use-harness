@@ -29,6 +29,7 @@ from openai import OpenAI
 from PIL import Image, ImageDraw
 
 from common import MODEL_CONNECTION_FILE, RESULTS_DIR, SCREENS_DIR, load_labels, load_screens, load_yaml
+from harness.screen.grid import grid_to_pixel
 
 PROMPT_VERSION = 1
 SYSTEM_PROMPT = """You locate elements on a screenshot of a computer screen.
@@ -184,13 +185,12 @@ def score(job, result, size, grid):
     row = {**job, **result, "pixel_x": None, "pixel_y": None, "hit": False, "distance_px": None}
     if result["x"] is None:
         return row
-    px = result["x"] / grid * width
-    py = result["y"] / grid * height
+    px, py = grid_to_pixel(result["x"], result["y"], width, height, grid)  # the harness's own conversion
     left, top, right, bottom = job["box"]
     # How far the point is outside the box, in pixels. 0 means inside.
     dx = max(left - px, 0, px - right)
     dy = max(top - py, 0, py - bottom)
-    row.update(pixel_x=round(px), pixel_y=round(py), distance_px=round((dx * dx + dy * dy) ** 0.5),
+    row.update(pixel_x=px, pixel_y=py, distance_px=round((dx * dx + dy * dy) ** 0.5),
                hit=(dx == 0 and dy == 0))
     return row
 

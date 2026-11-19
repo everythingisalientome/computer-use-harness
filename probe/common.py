@@ -1,5 +1,6 @@
 """Shared helpers for the probe scripts: file locations and loading YAML."""
 
+import sys
 from pathlib import Path
 
 import yaml
@@ -11,6 +12,9 @@ RESULTS_DIR = PROBE_DIR / "results"
 ELEMENTS_FILE = PROBE_DIR / "elements.yaml"
 LABELS_FILE = PROBE_DIR / "labels.yaml"
 MODEL_CONNECTION_FILE = ROOT_DIR / "config" / "model-connection.yaml"
+
+# Let the probe scripts import the harness, so they share its grid-to-pixel conversion.
+sys.path.insert(0, str(ROOT_DIR))
 
 
 def load_yaml(path):

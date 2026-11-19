@@ -54,3 +54,10 @@ Pointing probe (piece 0), see the docstring at the top of each script:
 - `.venv\Scripts\python probe\capture.py <screen_id>`: screenshot of the primary monitor
 - `.venv\Scripts\python probe\label.py [screen_id]`: draw the true box around each element, then check the images it writes to `probe/review/` (`--review` writes them only)
 - `.venv\Scripts\python probe\run_probe.py [--repeats N] [--screen id]`: ask the models and write the table to `probe/results/`
+
+Screen input and output (piece 1), see the docstring at the top of `scripts\screen.py`. Press Ctrl+Alt+Q at any time to stop:
+
+- `.venv\Scripts\python scripts\screen.py check`: the automatic check in a harmless test window; the report goes to `output/screen-check/`
+- `.venv\Scripts\python scripts\screen.py shot | click X Y | scroll X Y DIR N | drag FX FY TX TY | type TEXT | key KEYS | window`: one action on the grid, after a 3-second countdown, then report the window in front
+
+Tests: `.venv\Scripts\python -m pytest`

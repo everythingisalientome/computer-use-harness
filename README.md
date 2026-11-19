@@ -172,6 +172,7 @@ computer-use-harness/
 │   └── tools/                      work_queue_csv.py, launch_app.py, escalate.py
 ├── schemas/                      NEW: the checks each config file must pass
 ├── probe/                        NEW: the pointing-accuracy test
+├── scripts/                      NEW: command-line tools, such as screen.py for screen input and output
 ├── tests/                        NEW
 └── output/                       NEW: written by the harness at run time
     ├── state/REQ-0001.json         one record per work item
