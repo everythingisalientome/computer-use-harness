@@ -60,4 +60,8 @@ Screen input and output (piece 1), see the docstring at the top of `scripts\scre
 - `.venv\Scripts\python scripts\screen.py check`: the automatic check in a harmless test window; the report goes to `output/screen-check/`
 - `.venv\Scripts\python scripts\screen.py shot | click X Y | scroll X Y DIR N | drag FX FY TX TY | type TEXT | key KEYS | window`: one action on the grid, after a 3-second countdown, then report the window in front
 
+Model client (piece 2), see the docstring at the top of `scripts\model_check.py`. Needs the key in the environment variable named in `config/model-connection.yaml`:
+
+- `.venv\Scripts\python scripts\model_check.py [--slot name]`: act, verify, read and judgment calls on saved probe screenshots for every model slot, with one forced re-ask; the results go to `output/model-check/`
+
 Tests: `.venv\Scripts\python -m pytest`

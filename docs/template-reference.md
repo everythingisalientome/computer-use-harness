@@ -10,7 +10,7 @@ This set shows the format a converter must produce from a business procedure: wh
 
 | File | Format | What it holds | Who changes it | Scope |
 |---|---|---|---|---|
-| `config/overall-context.md` | Markdown | How every agent behaves | Platform team | All personas |
+| `config/overall-context.md` | Markdown | Guidance for every model call: act, verify, read and judgment. Anything specific to one kind of call belongs in the harness's instructions for that call | Platform team | All personas |
 | `config/model-connection.yaml` | YAML | Where the models are and which to use | Platform team | All personas |
 | `config/tools.yaml` | YAML | The tools the harness can run | Platform team | All personas |
 | `config/apps/<app>.md` | Markdown with a YAML header | What is known about one application | Whoever knows the app | Reused by every persona that uses the app |
@@ -53,7 +53,7 @@ Nothing in the templates may require administrator rights.
 | `app` | For screen steps | Which app context applies |
 | `via` | Yes | `screen` or `tool` |
 | `tool`, `args` | For tool steps | The tool operation and its arguments |
-| `inputs` | No | The named values this step may use |
+| `inputs` | No | The named values this step may use. The model may type only these, by name, with `value_ref` |
 | `done_when` | For screen steps | The condition that proves the step worked |
 | `verify_with` | No | `screen` or `tool_result`. Defaults to `screen` for screen steps and `tool_result` for tool steps |
 | `captures` | No | Values to read off the screen once the step is verified |
@@ -73,6 +73,8 @@ Roles:
 - **`complete`:** the step that closes the item at its source.
 
 Values in curly braces, such as `{customer_name}`, are filled in by the harness from the work item or from an earlier capture.
+
+**Literal text goes in double quotes.** The model may type a fixed text (not a work item value) only if that exact text appears in double quotes in the step's `intent` or `hints`, or in the body of the app file, for example `Type "Customer List" into the search box`. Work item values are never typed this way: the model names them with `value_ref` and the harness types them, and a quoted text that contains a work item value is refused. Quoting a label the model only needs to recognise, such as "Not Saved", is harmless.
 
 ## Capture fields
 

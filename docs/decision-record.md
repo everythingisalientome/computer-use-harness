@@ -1,6 +1,6 @@
 # Computer use harness: decision record
 
-Last updated: 2026-11-19 (screen input and output, section 8)
+Last updated: 2026-11-19 (model client and action format, section 9)
 
 Status: **design complete. Template set version 1 and the build brief are written and reviewed.** No code starts until Preet explicitly asks for it. The harness itself will be built in Claude Code on Windows, not in the planning chat.
 
@@ -267,3 +267,42 @@ An earlier run scored six elements 0 of 3 for both models. They were labelling e
 - At 100% scaling every check passed. The stop hotkey, pressed mid-check, ended the run with exit code 3 and left no key or button held.
 - At 125% and 150% scaling every check also passed, with identical pixel positions (reports `output/screen-check/2026-11-19_015520_scale125.txt` and `2026-11-19_015548_scale150.txt`). Positions are correct above 100%.
 - **Notepad's Save As dialog belongs to the Notepad process.** With the dialog in front, the foreground window was titled "Save as" and its process was `notepad.exe` (the Microsoft Store Notepad, version 11.2609). The allowed-app check by process therefore accepts it as part of Notepad, as `config/apps/notepad.md` assumes.
+
+## 9. Model client and action format (build piece 2), 2026-11-19
+
+### Decisions
+
+- **The act call's intent has real values filled in**, and "Values you may type" lists each of the step's `inputs` with its name and value. The model needs the real value to recognise it on screen, for example the right entry in a suggestion list. It still types it only by name.
+- **Literal text must be in double quotes.** A `type` with `text` is accepted only if that exact text appears in double quotes in the step's raw intent (before values are filled in), its hints, or the body of the step's app file. It is refused if it equals any work item or capture value, or contains one of three characters or more, even when the value is quoted somewhere. The templates were checked: the only literals they expect the model to type are the screen names in `config/apps/erpnext.md` ("Customer List", "Item List", "New Quotation"), which were already quoted. Every other typed value is a work item value or a capture, typed with `value_ref`. A quoted label the model only needs to recognise (such as "Not Saved") becomes an allowed literal; that is harmless.
+- **A `value_ref` that is not one of the step's inputs, or `text` that is not allowed, is a malformed answer**, not a guardrail breach: one re-ask, with an error naming the `value_ref` names the step allows. Every refused answer is logged with its kind (`format`, `value_ref` or `literal_text`).
+- **Parsing is strict.** One JSON object; a single ```` ```json ```` fence around it is allowed; unknown fields are refused. An answer to a read call that does not convert to the capture's type (for a number: an optional `₹` or `INR`, then digits, commas and at most one dot) is malformed too.
+- **Secret register.** Code that handles a secret registers it; the client searches every text of every call for every registered secret and refuses to send, without naming it. The register is empty in this build, because nothing in it handles passwords; the vault login tool will register its secrets when it is built. Values typed with `value_ref` go from the harness to the keyboard and never into a prompt.
+- **`config/overall-context.md` holds only guidance true of every kind of call.** It used to tell the model to return one action, which is wrong for verify, read and judgment calls. The step mechanics (one action at a time, `step_done`, `cannot_proceed`, staying in bounds, no recovery on irreversible steps) moved into the act instructions, which are fixed text in `harness/model/prompts.py` written from `docs/action-format.md`.
+- **Persona guidance and the guardrails' "never" list go on act calls only.** Verify, read and judgment calls get the overall context, their own instructions, the condition or question with real values, and the screenshot.
+- **Three outcomes for a call:** `ok`, `failed_attempt` (malformed twice; counts against the step's `on_fail` retries) and `unavailable`. Unavailable means a connection error, timeout, rate limit or server error that survived the OpenAI library's own two retries. **It is not a failed attempt: a provider outage pauses the run with its state intact. Piece 3 implements the pause.** A provider that refuses the settings (bad key, unknown model: any other 4xx) stops the run with a message, because waiting will not fix it.
+- **Action history lines say `sent`**, or `refused` with the reason, never "done": the harness knows it sent the input, not that it worked.
+- **Prompt size:** a budget of 60,000 characters of text, a constant in code. Only the history is cut, oldest first, keeping the last five lines. If the prompt is still too long, the harness stops and names the biggest part, usually an app file, for a person to shorten. Nothing is cut silently from the app context.
+- **Screenshots are sent as full-resolution PNG**, as in the pointing probe, so its accuracy figures still apply.
+- **No provider "JSON mode" or structured output.** Not every OpenAI-compatible endpoint supports it, and using it would need a new field in `model-connection.yaml`. Revisit if malformed answers become frequent.
+- **The wait cap clamps** a `wait` to `max_wait_seconds_per_action` and logs it, rather than refusing it. Built in piece 8 with the other guardrails.
+
+### Evidence
+
+- `pytest`: 98 tests pass, including a fake secret that stops the call before anything is sent, a bad-then-good answer (one re-ask carrying the error), bad twice (a failed attempt, no third call), an unknown `value_ref` (re-asked naming the allowed names, and logged), and unavailable as its own outcome.
+- `scripts\model_check.py`, run `output/model-check/2026-11-19_022248`: 14 calls per model on saved probe screenshots with real steps, rules and captures, including a forced re-ask.
+
+| | Gemini 3.8 Flash (`default`) | Gemma 4 31B (`alternate`) |
+|---|---|---|
+| Calls ending with a checked answer | 14 of 14 | 14 of 14 |
+| Forced re-ask recovered | yes | yes |
+| Answer as expected | 14 of 14 | 10 of 14 |
+| Seconds per call, mean / max | 5.6 / 13.8 | 1.4 / 3.2 |
+
+- Gemini picked the matching customer and not "Create a new Customer", returned `step_done` when the intent was already met, and `cannot_proceed` for a Notepad step with ERPNext on screen.
+- An earlier run (`2026-11-19_022135`) failed for Gemma: after the forced bad answer, its corrected answer added `target` to a `type` action, so it counted as a failed attempt, as designed. Two reruns of Gemma alone passed. Gemma adds `target` to `type` actions often; in the final run the re-ask fixed it once without being forced.
+
+### Observations for later pieces
+
+- **Gemma types into a field without clicking it first** (all 3 cases in the final run where a click on the field was expected). Another reason it is not the actor.
+- **In the failed run Gemma answered `ctrl+n` for the Notepad step while ERPNext was on screen.** The allowed-app check as written ("the foreground window belongs to one of the persona's allowed apps") would not stop that, because the Chrome window is allowed for ERPNext; Ctrl+N would open a new Chrome window. Piece 8 should consider checking the foreground window against the current step's app, not only the persona's list. To be decided with Preet.
+- Gemini act calls took up to about 16 seconds. Fine for this persona; worth watching in piece 10.

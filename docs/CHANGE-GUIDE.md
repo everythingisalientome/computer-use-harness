@@ -24,13 +24,14 @@ Answer three questions first.
 | Change where escalated items go | `escalation` in `persona.yaml`, or `destinations` under the `escalate` tool in `tools.yaml` | Send one test item and confirm it arrives |
 | Change how often the agent looks for work | `polling.interval_seconds` in `persona.yaml` | Nothing |
 | Add, remove or reword a step | `procedure.yaml` | Give the step a clear `done_when`. Decide `irreversible`. Raise the procedure version |
+| Let the agent type a fixed text, such as a menu name in a search box | Put the exact text in double quotes in the step's intent or hint, or in the app file | Never a work item value: those are typed with `value_ref` from the step's `inputs` |
 | Help the agent with a difficult screen | A hint. In the app file if it is true of the app in general, on the step if it is specific to that step | Write hints in words, never coordinates |
 | Describe a new popup or interruption | "Known interruptions" in the app file | Say how to dismiss it |
 | Record that a screen changed | The app file | Usually nothing else. The steps describe intent, so a moved or renamed field should not break them |
 | Switch model provider, or use a localhost model | `config/model-connection.yaml` | Set the key in the named environment variable. Rerun the pointing probe |
 | Use a different model for checking than for acting | `models.verifier` in `persona.yaml` | The slot name must exist in `model-connection.yaml` |
 | Change the action limit, blocked keys or allowed apps | `guardrails.yaml` | Nothing |
-| Change behaviour for every agent | `config/overall-context.md` | Rerun every persona once in debug mode. This file affects all of them |
+| Change behaviour for every agent | `config/overall-context.md` | It goes to every kind of call, so keep it to guidance true of act, verify, read and judgment alike. Run `scripts\model_check.py`, then every persona once in debug mode |
 | Add a persona on an app already described | A new folder under `config/personas/` with the four files | Add its apps and tools to `persona.yaml` |
 | Add a persona on a new app, web or desktop | The persona folder, and a new file under `config/apps/` | The app file's header must have `kind`, `launch`, `allowed_window` and `home`. Use `erpnext.md` as the pattern for a web app and `notepad.md` for a desktop app |
 
